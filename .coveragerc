@@ -1,0 +1,10 @@
+[run]
+source = tornado_smb
+omit =
+    */tests/*
+
+[report]
+exclude_lines =
+    pragma: no cover
+    raise NotImplementedError
+    pass

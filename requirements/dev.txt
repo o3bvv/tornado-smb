@@ -1,0 +1,6 @@
+bpython
+sphinx
+tox
+
+-r dist.txt
+-r test.txt
