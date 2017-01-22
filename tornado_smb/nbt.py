@@ -5,6 +5,9 @@ ORD_A = ord('A')
 NETBIOS_NAME_LEN = 16
 NETBIOS_NAME_FMT = "{{:{}}}".format(NETBIOS_NAME_LEN)
 
+# TODO: 0-padding for wildcards
+# TODO: last byte in name
+
 
 class NetBIOSName:
     __slots__ = ('name', 'scope', )
@@ -17,7 +20,7 @@ class NetBIOSName:
                 .format(name=name, max=NETBIOS_NAME_LEN)
             )
 
-        self.name = name
+        self.name = name.upper()
         self.scope = scope.upper() if scope else ''
 
     def to_bytes(self):
@@ -36,13 +39,14 @@ class NetBIOSName:
 
     def _encode_name(self):
         padded = NETBIOS_NAME_FMT.format(self.name)
-        return b''.join(map(self.encode_char, padded))
+        return b''.join(
+            self.encode_byte(ord(ch)) for ch in padded
+        )
 
     @staticmethod
-    def encode_char(value):
-        numeric = ord(value)
-        hi_nibble = 0x0F & (numeric >> 4)
-        lo_nibble = 0x0F & numeric
+    def encode_byte(value):
+        hi_nibble = 0x0F & (value >> 4)
+        lo_nibble = 0x0F & value
         return bytes((hi_nibble + ORD_A, lo_nibble + ORD_A))
 
     @classmethod
