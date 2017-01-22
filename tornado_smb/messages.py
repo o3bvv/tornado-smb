@@ -15,6 +15,7 @@ class SMBMessage:
         'SecurityFeatures', 'TID', 'PIDLow', 'UID', 'MID', 'Words', 'Bytes',
     )
 
+    HEADER_LENGTH = 32
     _HEADER_PROTOCOL_SIGNATURE = pack('B 3s', 0xFF, b'SMB')
     _HEADER_SIGNATURE = Struct(
         ' B'  # Command
@@ -32,7 +33,7 @@ class SMBMessage:
 
     def __init__(
         self, Command=0, NT_Status=0, Flags1=0, Flags2=0, PIDHigh=0,
-        SecurityFeatures=None, TID=0XFFFF, PIDLow=0, UID=0, MID=0,
+        SecurityFeatures=None, TID=0xFFFF, PIDLow=0, UID=0, MID=0,
         Words=None, Bytes=None,
     ):
         self.Command = Command
@@ -54,27 +55,25 @@ class SMBMessage:
 
     def to_bytes(self):
         return (
-            self._build_header() +
-            self._build_parameters_block() +
-            self._build_data_block()
+              self._build_header()
+            + self._build_parameters_block()
+            + self._build_data_block()
         )
 
     def _build_header(self):
         return (
-            self._HEADER_PROTOCOL_SIGNATURE +
-            self._HEADER_SIGNATURE.pack(
-                self.Command,
-                self.NT_Status,
-                self.Flags1,
-                self.Flags2,
-                self.PIDHigh,
-                self.SecurityFeatures,
-                0,
-                self.TID,
-                self.PIDLow,
-                self.UID,
-                self.MID,
-            )
+              self._HEADER_PROTOCOL_SIGNATURE
+            + pack(' B', self.Command)
+            + pack('<I', self.NT_Status)
+            + pack(' B', self.Flags1)
+            + pack('<H', self.Flags2)
+            + pack('<H', self.PIDHigh)
+            + pack('8s', self.SecurityFeatures)
+            + pack('<H', 0)
+            + pack('<H', self.TID)
+            + pack('<H', self.PIDLow)
+            + pack('<H', self.UID)
+            + pack('<H', self.MID)
         )
 
     def _build_parameters_block(self):
@@ -88,7 +87,7 @@ class SMBMessage:
     def _build_data_block(self):
         count = len(self.Bytes)
         return pack(
-            'B {count}B'.format(count=count),
+            'H {count}B'.format(count=count),
             count,
             *bytearray(self.Bytes)
         )
