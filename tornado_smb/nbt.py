@@ -1,35 +1,43 @@
 # coding: utf-8
 
-ORD_A = ord('A')
+import binascii
 
-NETBIOS_NAME_LEN = 16
-NETBIOS_NAME_FMT = "{{:{}}}".format(NETBIOS_NAME_LEN)
-NETBIOS_NAME_WILD_CARD = '*'
+ORD_A = ord('A')
+WILD_CARD = '*'
+BYTE_ZERO = bytes([0, ])
+
+NETBIOS_NAME_PURPOSE_WORKSTATION = 0x00
+NETBIOS_NAME_PURPOSE_MESSENGER = 0x03
+NETBIOS_NAME_PURPOSE_FILE_SERVER = 0x20
+NETBIOS_NAME_PURPOSE_DOMAIN_MASTER = 0x1B
+
+NETBIOS_NAME_FULL_LEN = 16
+NETBIOS_NAME_VALUE_LEN = NETBIOS_NAME_FULL_LEN - 1  # 1 byte for purpose
+
+NETBIOS_NAME_FMT = "{{:{}}}".format(NETBIOS_NAME_VALUE_LEN)
 NETBIOS_NAME_WILD_CARD_PADDED = bytes.ljust(
-    NETBIOS_NAME_WILD_CARD.encode(), NETBIOS_NAME_LEN, b'\x00',
+    WILD_CARD.encode(), NETBIOS_NAME_VALUE_LEN, BYTE_ZERO,
 )
 
 
-# TODO: last byte in name
-
-
 class NetBIOSName:
-    __slots__ = ('name', 'scope', )
+    __slots__ = ('value', 'scope', 'purpose', )
 
-    def __init__(self, name, scope=None):
-        if len(name) > NETBIOS_NAME_LEN:
+    def __init__(self, value, scope=None, purpose=NETBIOS_NAME_PURPOSE_WORKSTATION):
+        if len(value) > NETBIOS_NAME_VALUE_LEN:
             raise ValueError(
-                "NetBIOS name '{name}' is too long! "
+                "NetBIOS name '{value}' is too long! "
                 "Truncate it to {max} bytes."
-                .format(name=name, max=NETBIOS_NAME_LEN)
+                .format(value=value, max=NETBIOS_NAME_VALUE_LEN)
             )
 
-        self.name = name.upper()
+        self.value = value.upper()
         self.scope = scope.upper() if scope else ''
+        self.purpose = bytes([purpose, ])
 
     def to_bytes(self):
         chunks = [
-            self._encode_name(),
+            self._encode_value(),
         ]
         if self.scope:
             chunks.extend(self.scope.split('.'))
@@ -39,14 +47,15 @@ class NetBIOSName:
                 item = item.encode()
             return bytes((len(item), )) + item
 
-        return b''.join(map(pack_item, chunks)) + b'\x00'
+        return b''.join(map(pack_item, chunks)) + BYTE_ZERO
 
-    def _encode_name(self):
-        if self.name == NETBIOS_NAME_WILD_CARD:
+    def _encode_value(self):
+        if self.value == WILD_CARD:
             padded = NETBIOS_NAME_WILD_CARD_PADDED
         else:
-            padded = NETBIOS_NAME_FMT.format(self.name).encode()
+            padded = NETBIOS_NAME_FMT.format(self.value).encode()
 
+        padded += self.purpose
         return b''.join(map(self.encode_byte, padded))
 
     @staticmethod
@@ -60,8 +69,6 @@ class NetBIOSName:
         raise NotImplementedError
 
     def __str__(self):
-        return (
-            "{}.{}".format(self.name, self.scope)
-            if self.scope else
-            self.name
-        )
+        hex_purpose = binascii.hexlify(self.purpose).decode()
+        name = "{}<{}>".format(self.value, hex_purpose)
+        return "{}.{}".format(name, self.scope) if self.scope else name
