@@ -4,8 +4,12 @@ ORD_A = ord('A')
 
 NETBIOS_NAME_LEN = 16
 NETBIOS_NAME_FMT = "{{:{}}}".format(NETBIOS_NAME_LEN)
+NETBIOS_NAME_WILD_CARD = '*'
+NETBIOS_NAME_WILD_CARD_PADDED = bytes.ljust(
+    NETBIOS_NAME_WILD_CARD.encode(), NETBIOS_NAME_LEN, b'\x00',
+)
 
-# TODO: 0-padding for wildcards
+
 # TODO: last byte in name
 
 
@@ -30,18 +34,20 @@ class NetBIOSName:
         if self.scope:
             chunks.extend(self.scope.split('.'))
 
-        def make_item(item):
+        def pack_item(item):
             if isinstance(item, str):
                 item = item.encode()
             return bytes((len(item), )) + item
 
-        return b''.join(map(make_item, chunks)) + b'\x00'
+        return b''.join(map(pack_item, chunks)) + b'\x00'
 
     def _encode_name(self):
-        padded = NETBIOS_NAME_FMT.format(self.name)
-        return b''.join(
-            self.encode_byte(ord(ch)) for ch in padded
-        )
+        if self.name == NETBIOS_NAME_WILD_CARD:
+            padded = NETBIOS_NAME_WILD_CARD_PADDED
+        else:
+            padded = NETBIOS_NAME_FMT.format(self.name).encode()
+
+        return b''.join(map(self.encode_byte, padded))
 
     @staticmethod
     def encode_byte(value):

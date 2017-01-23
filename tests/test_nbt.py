@@ -24,6 +24,13 @@ class NetBIOSNameTestCase(unittest.TestCase):
             b"\x20EOEFELEPCACACACACACACACACACACACA\x00"
         )
 
+    def test_to_bytes_wildcard(self):
+        testee = NetBIOSName("*")
+        self.assertEqual(
+            testee.to_bytes(),
+            b"\x20CKAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\x00"
+        )
+
     def test_to_bytes_with_scope(self):
         testee = NetBIOSName("Neko", "cat.org")
         self.assertEqual(
