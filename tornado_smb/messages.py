@@ -1,6 +1,6 @@
 # coding: utf-8
 
-from struct import Struct, pack
+from struct import pack
 
 
 class SMBMessage:
@@ -17,19 +17,6 @@ class SMBMessage:
 
     HEADER_LENGTH = 32
     _HEADER_PROTOCOL_SIGNATURE = pack('B 3s', 0xFF, b'SMB')
-    _HEADER_SIGNATURE = Struct(
-        ' B'  # Command
-        ' I'  # NT_Status
-        ' B'  # Flags1
-        ' H'  # Flags2
-        ' H'  # PIDHigh
-        '8s'  # SecurityFeatures
-        ' H'  # Reserved
-        ' H'  # TID
-        ' H'  # PIDLow
-        ' H'  # UID
-        ' H'  # MID
-    )
 
     def __init__(
         self, Command=0, NT_Status=0, Flags1=0, Flags2=0, PIDHigh=0,

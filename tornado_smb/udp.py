@@ -19,7 +19,7 @@ class UDPClient:
     @gen.coroutine
     def connect(
         self, host, port, ssl_options=None, max_buffer_size=None,
-        allow_broadcast=False,
+        broadcast=False,
     ):
         """
         Connect to the given host and port.
@@ -30,7 +30,7 @@ class UDPClient:
         """
         sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
-        if allow_broadcast:
+        if broadcast:
             sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
 
         stream = IOStream(
