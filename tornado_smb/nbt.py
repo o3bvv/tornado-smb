@@ -7,20 +7,21 @@ from struct import pack
 
 
 ORD_A     = ord('A')
-WILD_CARD = '*'
-BYTE_ZERO = bytes([0, ])
+WILDCARD  = '*'
+ZERO      = 0
+BYTE_ZERO = bytes((ZERO, ))
 
 NB_NAME_PURPOSE_WORKSTATION   = 0x00
 NB_NAME_PURPOSE_MESSENGER     = 0x03
 NB_NAME_PURPOSE_FILE_SERVER   = 0x20
 NB_NAME_PURPOSE_DOMAIN_MASTER = 0x1B
 
-NB_NAME_FULL_LEN  = 16
-NB_NAME_VALUE_LEN = NB_NAME_FULL_LEN - 1  # 1 byte for purpose
-
-NB_NAME_FMT = "{{:{}}}".format(NB_NAME_VALUE_LEN)
-NB_NAME_WILD_CARD_PADDED = bytes.ljust(
-    WILD_CARD.encode(), NB_NAME_VALUE_LEN, BYTE_ZERO,
+NB_NAME_FULL_LEN        = 16
+NB_NAME_FULL_LEN_BYTES  = NB_NAME_FULL_LEN * 2
+NB_NAME_VALUE_LEN       = NB_NAME_FULL_LEN - 1  # 1 byte for purpose
+NB_NAME_FMT             = "{{:{}}}".format(NB_NAME_VALUE_LEN)
+NB_NAME_WILDCARD_PADDED = bytes.ljust(
+    WILDCARD.encode(), NB_NAME_VALUE_LEN, BYTE_ZERO,
 )
 
 
@@ -51,6 +52,9 @@ class NBName:
             chunks.extend(self.scope.split('.'))
 
         def pack_item(item):
+            # TODO:
+            #     Length of an item must not exceed 63 bytes.
+            #     First 2 bits of 'length' are used as flags for length.
             if isinstance(item, str):
                 item = item.encode()
             return bytes((len(item), )) + item
@@ -58,8 +62,8 @@ class NBName:
         return b''.join(map(pack_item, chunks)) + BYTE_ZERO
 
     def _encode_value(self):
-        if self.value == WILD_CARD:
-            padded = NB_NAME_WILD_CARD_PADDED
+        if self.value == WILDCARD:
+            padded = NB_NAME_WILDCARD_PADDED
         else:
             padded = NB_NAME_FMT.format(self.value).encode()
 
@@ -74,7 +78,74 @@ class NBName:
 
     @classmethod
     def from_bytes(cls, data):
-        raise NotImplementedError
+        last_byte = data[-1]
+        if last_byte != ZERO:
+            raise ValueError(
+                "NBName was expected to end with {expected}, which is the "
+                "length of root scope, but got {actual}."
+                .format(expected=ZERO, actual=last_byte)
+            )
+
+        offset = 0
+
+        length = data[offset]
+        offset += 1
+
+        if length != NB_NAME_FULL_LEN_BYTES:
+            raise ValueError(
+                "NBName was expected to have {expected} bytes for name, "
+                "but it got {actual} bytes."
+                .format(expected=NB_NAME_FULL_LEN_BYTES, actual=length)
+            )
+
+        full_name = cls.decode_bytes(data[offset:offset + length])
+        value, purpose = cls.decode_value_and_purpose(full_name)
+        offset += length
+
+        scope = cls.decode_scope(data[offset:-1])
+        return cls(value=value, scope=scope, purpose=purpose)
+
+    @classmethod
+    def decode_value_and_purpose(cls, data):
+        value = data[:NB_NAME_VALUE_LEN]
+        if value[0] == WILDCARD:
+            value = WILDCARD
+        else:
+            value = value.decode().strip()
+
+        purpose = data[NB_NAME_VALUE_LEN]
+        return (value, purpose)
+
+    @classmethod
+    def decode_scope(cls, data):
+        if not data:
+            return ''
+
+        chunks = []
+        offset = 0
+
+        while offset < len(data):
+            length = data[offset]
+            offset += 1
+
+            chunk = data[offset:offset + length].decode()
+            chunks.append(chunk)
+            offset += length
+
+        return '.'.join(chunks)
+
+    @classmethod
+    def decode_bytes(cls, data):
+        return b''.join(
+            cls.decode_word(data[i], data[i + 1])
+            for i in range(0, len(data), 2)
+        )
+
+    @staticmethod
+    def decode_word(hi_byte, lo_byte):
+        hi_nibble = (hi_byte - ORD_A) << 4
+        lo_nibble =  lo_byte - ORD_A
+        return bytes((hi_nibble | lo_nibble, ))
 
     def __str__(self):
         hex_purpose = binascii.hexlify(self.purpose).decode()

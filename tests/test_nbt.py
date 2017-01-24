@@ -3,10 +3,20 @@
 import binascii
 import unittest
 
-from tornado_smb.nbt import NBName, NBNSNameQueryRequest
+from tornado_smb.nbt import (
+    NBName, NBNSNameQueryRequest, NB_NAME_PURPOSE_WORKSTATION,
+)
 
 
 class NBNameTestCase(unittest.TestCase):
+
+    def test_to_str(self):
+        testee = NBName("Neko")
+        self.assertEqual(str(testee), "NEKO<00>")
+
+    def test_to_str_with_scope(self):
+        testee = NBName("Neko", "cat.org")
+        self.assertEqual(str(testee), "NEKO<00>.CAT.ORG")
 
     def test_encode_byte(self):
         self.assertEqual(
@@ -39,12 +49,39 @@ class NBNameTestCase(unittest.TestCase):
             b"\x20EOEFELEPCACACACACACACACACACACAAA\x03CAT\x03ORG\x00"
         )
 
-    def test_to_str(self):
-        testee = NBName("Neko")
-        self.assertEqual(str(testee), "NEKO<00>")
+    def test_decode_word(self):
+        result = NBName.decode_word(ord('E'), ord('O'))
+        self.assertEqual(result, b'N')
 
-    def test_to_str_with_scope(self):
-        testee = NBName("Neko", "cat.org")
+    def test_decode_bytes(self):
+        result = NBName.decode_bytes(
+            b"EOEFELEPCACACACACACACACACACACAAA"
+        )
+        self.assertEqual(
+            result,
+            b"NEKO           \x00"
+        )
+
+    def test_decode_value_and_purpose(self):
+        value, purpose = NBName.decode_value_and_purpose(
+            b"NEKO           \x00"
+        )
+        self.assertEqual(value, "NEKO")
+        self.assertEqual(purpose, NB_NAME_PURPOSE_WORKSTATION)
+
+    def test_decode_scope(self):
+        result = NBName.decode_scope(
+            b"\x03CAT\x03ORG"
+        )
+        self.assertEqual(
+            result,
+            "CAT.ORG"
+        )
+
+    def test_from_bytes(self):
+        testee = NBName.from_bytes(
+            b"\x20EOEFELEPCACACACACACACACACACACAAA\x03CAT\x03ORG\x00"
+        )
         self.assertEqual(str(testee), "NEKO<00>.CAT.ORG")
 
 
