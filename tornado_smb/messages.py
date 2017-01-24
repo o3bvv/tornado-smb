@@ -42,12 +42,12 @@ class SMBMessage:
 
     def to_bytes(self):
         return (
-              self._build_header()
-            + self._build_parameters_block()
-            + self._build_data_block()
+              self.build_header()
+            + self.build_parameters_block()
+            + self.build_data_block()
         )
 
-    def _build_header(self):
+    def build_header(self):
         return (
               self._HEADER_PROTOCOL_SIGNATURE
             + pack(' B', self.Command)
@@ -63,7 +63,7 @@ class SMBMessage:
             + pack('<H', self.MID)
         )
 
-    def _build_parameters_block(self):
+    def build_parameters_block(self):
         count = len(self.Words)
         return pack(
             'B {count}B'.format(count=count),
@@ -71,7 +71,7 @@ class SMBMessage:
             *bytearray(self.Words)
         )
 
-    def _build_data_block(self):
+    def build_data_block(self):
         count = len(self.Bytes)
         return pack(
             'H {count}B'.format(count=count),

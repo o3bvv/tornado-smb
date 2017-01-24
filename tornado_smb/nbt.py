@@ -205,11 +205,11 @@ class NBNSMessage(metaclass=abc.ABCMeta):
 
     def to_bytes(self):
         return (
-              self._build_header()
-            + self._build_body()
+              self.build_header()
+            + self.build_body()
         )
 
-    def _build_header(self):
+    def build_header(self):
         flags = (
               (0b0001111 & self.rcode)
             | (0b1111111 & self.nm_flags) << 4
@@ -227,7 +227,7 @@ class NBNSMessage(metaclass=abc.ABCMeta):
         )
 
     @abc.abstractmethod
-    def _build_body(self):
+    def build_body(self):
         raise NotImplementedError
 
 
@@ -262,10 +262,10 @@ class NBNSRequest(NBNSMessage):
         self.question_type  = question_type
         self.question_class = question_class
 
-    def _build_body(self):
-        return self._build_query_entry()
+    def build_body(self):
+        return self.build_query_entry()
 
-    def _build_query_entry(self):
+    def build_query_entry(self):
         return (
               self.question_name
             + pack(
