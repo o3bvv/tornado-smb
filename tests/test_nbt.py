@@ -1,10 +1,14 @@
 # coding: utf-8
 
 import binascii
+import socket
 import unittest
 
 from tornado_smb.nbt import (
-    NBName, NBNSNameQueryRequest, NB_NAME_PURPOSE_WORKSTATION,
+    NB_NAME_PURPOSE_WORKSTATION, NB_NS_NB_FLAGS_ONT_B,
+)
+from tornado_smb.nbt import (
+    NBName, NBNSNameQueryRequest, NBNSNameRegistrationRequest,
 )
 
 
@@ -99,5 +103,26 @@ class NBNSNameQueryRequestTestCase(unittest.TestCase):
             (
                 "07ac0110000100000000000020454f4546454c4550434143414341434143"
                 "41434143414341434143414341414103434154034f52470000200001"
+            )
+        )
+
+
+class NBNSNameRegistrationRequestTestCase(unittest.TestCase):
+
+    def test_to_bytes(self):
+        testee = NBNSNameRegistrationRequest(
+            name_trn_id=1964,
+            q_name=NBName("neko").to_bytes(),
+            ont=NB_NS_NB_FLAGS_ONT_B,
+            nb_address=socket.inet_aton("10.129.203.95"),
+            broadcast=True,
+        )
+        data = testee.to_bytes()
+        self.assertEqual(
+            binascii.hexlify(data).decode(),
+            (
+                "07ac2910000100000000000120454f4546454c4550434143414341434143"
+                "4143414341434143414341434141410000200001c00c0020000100000000"
+                "000600000a81cb5f"
             )
         )
