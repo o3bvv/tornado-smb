@@ -170,7 +170,7 @@ NB_NS_NM_FLAGS_RD = 1 << 4
 NB_NS_NM_FLAGS_TC = 1 << 5
 NB_NS_NM_FLAGS_AA = 1 << 6
 
-NB_NS_RCODE_NONE    = 0x0
+NB_NS_RCODE_POS_RSP = 0x0
 NB_NS_RCODE_FMT_ERR = 0x1
 NB_NS_RCODE_SRV_ERR = 0x2
 NB_NS_RCODE_IMP_ERR = 0x4
@@ -252,7 +252,7 @@ class NBNSRequest(NBNSMessage):
             r           = NB_NS_R_REQUEST,
             opcode      = opcode,
             nm_flags    = nm_flags,
-            rcode       = NB_NS_RCODE_NONE,
+            rcode       = NB_NS_RCODE_POS_RSP,
             qdcount     = qdcount,
             ancount     = ancount,
             nscount     = nscount,
