@@ -90,7 +90,7 @@ class NBNSNameQueryRequestTestCase(unittest.TestCase):
     def test_to_bytes(self):
         testee = NBNSNameQueryRequest(
             name_trn_id=1964,
-            question_name=NBName("neko", "cat.org").to_bytes(),
+            q_name=NBName("neko", "cat.org").to_bytes(),
             broadcast=True,
         )
         data = testee.to_bytes()

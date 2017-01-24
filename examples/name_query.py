@@ -21,7 +21,7 @@ def run_query(ioloop, name, scope):
     nb_name = NBName(name, scope)
     nb_name_query = NBNSNameQueryRequest(
         name_trn_id=1964,
-        question_name=nb_name.to_bytes(),
+        q_name=nb_name.to_bytes(),
         broadcast=True,
     )
     yield stream.write(nb_name_query.to_bytes())

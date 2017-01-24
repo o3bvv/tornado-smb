@@ -1,6 +1,5 @@
 # coding: utf-8
 
-import abc
 import binascii
 
 from struct import pack
@@ -178,35 +177,101 @@ NB_NS_RCODE_RFS_ERR = 0x5
 NB_NS_RCODE_ACT_ERR = 0x6
 NB_NS_RCODE_CFT_ERR = 0x7
 
+NBNS_Q_TYPE_NB     = 0x0020
+NBNS_Q_TYPE_NBSTAT = 0x0021
+NBNS_Q_CLASS_IN    = 0x0001
 
-class NBNSMessage(metaclass=abc.ABCMeta):
+NBNS_RR_TYPE_A      = 0x0001
+NBNS_RR_TYPE_NS     = 0x0002
+NBNS_RR_TYPE_NULL   = 0x000A
+NBNS_RR_TYPE_NB     = 0x0020
+NBNS_RR_TYPE_NBSTAT = 0x0021
+NBNS_RR_CLASS_IN    = 0x0001
+
+
+class NBSNQuestionEntry:
+    __slots__ = ('q_name', 'q_type', 'q_class', )
+
+    def __init__(self, q_name, q_type, q_class):
+        self.q_name = q_name
+        self.q_type = q_type
+        self.q_class = q_class
+
+    def to_bytes(self):
+        return (
+              self.q_name
+            + pack(
+                '>2H',
+                self.q_type,
+                self.q_class,
+            )
+        )
+
+
+class NBSNResourceRecord:
+    __slots__ = (
+        'rr_name', 'rr_type', 'rr_class', 'ttl', 'rdlength', 'rdata',
+    )
+
+    def __init__(self, rr_name, rr_type, rr_class, ttl, rdlength, rdata):
+        self.rr_name = rr_name
+        self.rr_type = rr_type
+        self.rr_class = rr_class
+        self.ttl = ttl
+        self.rdlength = rdlength
+        self.rdata = rdata
+
+    def to_bytes(self):
+        return (
+              self.rr_name
+            + pack(
+                " >"
+                "2H"
+                " L"
+                " I",
+                self.rr_type,
+                self.rr_class,
+                self.ttl,
+                self.rdlength,
+            )
+            + sef.rdata
+        )
+
+
+
+class NBNSMessage:
     """
     Base class for NetBIOS Name Service (NBNS) messages.
 
     """
     __slots__ = (
         'name_trn_id', 'r', 'opcode', 'nm_flags', 'rcode',
-        'qdcount', 'ancount', 'nscount', 'arcount',
+        'question_entries', 'answer_resource_records',
+        'authority_resource_records', 'additional_resource_records',
     )
 
     def __init__(
-        self, name_trn_id, r, opcode, nm_flags, rcode, qdcount, ancount,
-        nscount, arcount,
+        self, name_trn_id, r, opcode, nm_flags, rcode, question_entries=None,
+        answer_resource_records=None, authority_resource_records=None,
+        additional_resource_records=None,
     ):
-        self.name_trn_id = name_trn_id
-        self.r           = r
-        self.opcode      = opcode
-        self.nm_flags    = nm_flags
-        self.rcode       = rcode
-        self.qdcount     = qdcount
-        self.ancount     = ancount
-        self.nscount     = nscount
-        self.arcount     = arcount
+        self.name_trn_id                 = name_trn_id
+        self.r                           = r
+        self.opcode                      = opcode
+        self.nm_flags                    = nm_flags
+        self.rcode                       = rcode
+        self.question_entries            = question_entries
+        self.answer_resource_records     = answer_resource_records
+        self.authority_resource_records  = authority_resource_records
+        self.additional_resource_records = additional_resource_records
 
     def to_bytes(self):
         return (
               self.build_header()
-            + self.build_body()
+            + self.build_question_entries()
+            + self.build_answer_resource_records()
+            + self.build_authority_resource_records()
+            + self.build_additional_resource_records()
         )
 
     def build_header(self):
@@ -220,59 +285,71 @@ class NBNSMessage(metaclass=abc.ABCMeta):
             '>6H',
             self.name_trn_id,
             flags,
-            self.qdcount,
-            self.ancount,
-            self.nscount,
-            self.arcount,
+            (
+                len(self.question_entries)
+                if self.question_entries else
+                0
+            ),
+            (
+                len(self.answer_resource_records)
+                if self.answer_resource_records else
+                0
+            ),
+            (
+                len(self.authority_resource_records)
+                if self.authority_resource_records else
+                0
+            ),
+            (
+                len(self.additional_resource_records)
+                if self.additional_resource_records else
+                0
+            ),
         )
 
-    @abc.abstractmethod
-    def build_body(self):
-        raise NotImplementedError
+    def build_question_entries(self):
+        return (
+            b''.join(q.to_bytes() for q in self.question_entries)
+            if self.question_entries else
+            b''
+        )
 
+    def build_answer_resource_records(self):
+        return self.build_resource_records(self.answer_resource_records)
 
-NBNS_QUESTION_TYPE_NB     = 0x0020
-NBNS_QUESTION_TYPE_NBSTAT = 0x0021
+    def build_authority_resource_records(self):
+        return self.build_resource_records(self.authority_resource_records)
 
-NBNS_QUESTION_CLASS_IN    = 0x0001
+    def build_additional_resource_records(self):
+        return self.build_resource_records(self.additional_resource_records)
+
+    @staticmethod
+    def build_resource_records(records):
+        return (
+            b''.join(r.to_bytes() for r in records)
+            if records else
+            b''
+        )
 
 
 class NBNSRequest(NBNSMessage):
-    __slots__ = NBNSMessage.__slots__ + (
-        'question_name', 'question_type', 'question_class',
-    )
 
     def __init__(
         self,
-        name_trn_id, opcode, nm_flags, qdcount, ancount, nscount, arcount,
-        question_name, question_type, question_class=NBNS_QUESTION_CLASS_IN,
+        name_trn_id, opcode, nm_flags, question_entries=None,
+        answer_resource_records=None, authority_resource_records=None,
+        additional_resource_records=None,
     ):
         super().__init__(
-            name_trn_id = name_trn_id,
-            r           = NB_NS_R_REQUEST,
-            opcode      = opcode,
-            nm_flags    = nm_flags,
-            rcode       = NB_NS_RCODE_POS_RSP,
-            qdcount     = qdcount,
-            ancount     = ancount,
-            nscount     = nscount,
-            arcount     = arcount,
-        )
-        self.question_name  = question_name
-        self.question_type  = question_type
-        self.question_class = question_class
-
-    def build_body(self):
-        return self.build_query_entry()
-
-    def build_query_entry(self):
-        return (
-              self.question_name
-            + pack(
-                '>2H',
-                self.question_type,
-                self.question_class,
-            )
+            name_trn_id                 = name_trn_id,
+            r                           = NB_NS_R_REQUEST,
+            opcode                      = opcode,
+            nm_flags                    = nm_flags,
+            rcode                       = NB_NS_RCODE_POS_RSP,
+            question_entries            = question_entries,
+            answer_resource_records     = answer_resource_records,
+            authority_resource_records  = authority_resource_records,
+            additional_resource_records = additional_resource_records,
         )
 
 
@@ -284,20 +361,24 @@ class NBNSNameQueryRequest(NBNSRequest):
 
     """
 
-    def __init__(self, name_trn_id, question_name, broadcast=False):
+    def __init__(self, name_trn_id, q_name, broadcast=False):
         nm_flags = (
                NB_NS_NM_FLAGS_RD
             | (NB_NS_NM_FLAGS_B if broadcast else 0)
         )
         super().__init__(
-            name_trn_id    = name_trn_id,
-            opcode         = NB_NS_OPCODE_QUERY,
-            nm_flags       = nm_flags,
-            qdcount        = 0x0001,
-            ancount        = 0x0000,
-            nscount        = 0x0000,
-            arcount        = 0x0000,
-            question_name  = question_name,
-            question_type  = NBNS_QUESTION_TYPE_NB,
-            question_class = NBNS_QUESTION_CLASS_IN,
+            name_trn_id      = name_trn_id,
+            opcode           = NB_NS_OPCODE_QUERY,
+            nm_flags         = nm_flags,
+            question_entries = [
+                NBSNQuestionEntry(
+                    q_name  = q_name,
+                    q_type  = NBNS_Q_TYPE_NB,
+                    q_class = NBNS_Q_CLASS_IN,
+                ),
+            ],
         )
+
+
+class NBNSNameRegistrationRequest(NBNSRequest):
+    pass
