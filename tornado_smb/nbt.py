@@ -108,7 +108,7 @@ NB_NS_RCODE_ACT_ERR = 0x6
 NB_NS_RCODE_CFT_ERR = 0x7
 
 
-class NBNSMessageBase(metaclass=abc.ABCMeta):
+class NBNSMessage(metaclass=abc.ABCMeta):
     """
     Base class for NetBIOS Name Service (NBNS) messages.
 
@@ -165,8 +165,8 @@ NBNS_QUESTION_TYPE_NBSTAT = 0x0021
 NBNS_QUESTION_CLASS_IN    = 0x0001
 
 
-class NBNSRequestBase(NBNSMessageBase):
-    __slots__ = NBNSMessageBase.__slots__ + (
+class NBNSRequest(NBNSMessage):
+    __slots__ = NBNSMessage.__slots__ + (
         'question_name', 'question_type', 'question_class',
     )
 
@@ -203,7 +203,8 @@ class NBNSRequestBase(NBNSMessageBase):
             )
         )
 
-class NBNSNameQueryRequest(NBNSRequestBase):
+
+class NBNSNameQueryRequest(NBNSRequest):
     """
     NetBIOS Name Service Name Query request.
 
