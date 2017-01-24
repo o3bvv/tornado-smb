@@ -210,15 +210,16 @@ class NBNSMessage(metaclass=abc.ABCMeta):
         )
 
     def _build_header(self):
+        flags = (
+              (0b0001111 & self.rcode)
+            | (0b1111111 & self.nm_flags) << 4
+            | (0b0001111 & self.opcode)   << 11
+            | (0b0000001 & self.r)        << 15
+        )
         return pack(
             '>6H',
             self.name_trn_id,
-            (
-                  (0b0001111 & self.rcode)
-                | (0b1111111 & self.nm_flags) << 4
-                | (0b0001111 & self.opcode)   << 11
-                | (0b0000001 & self.r)        << 15
-            ),
+            flags,
             self.qdcount,
             self.ancount,
             self.nscount,
