@@ -401,13 +401,19 @@ class NBNSNameRegistrationRequest(NBNSRequest):
     """
 
     def __init__(
-        self, name_trn_id, q_name, ont, nb_address, for_group=False, ttl=None,
-        broadcast=False,
+        self, name_trn_id, q_name, nb_address, for_group=False, ont=None,
+        ttl=None, broadcast=False,
     ):
         if broadcast:
             ttl = 0
         elif ttl is None:
             raise ValueError("NBNSNameRegistrationRequest requires TTL value.")
+
+        if broadcast:
+            ont = NB_NS_NB_FLAGS_ONT_B
+        elif ont is None:
+            raise ValueError("NBNSNameRegistrationRequest requires ONT value.")
+
 
         nm_flags = (
                NB_NS_NM_FLAGS_RD

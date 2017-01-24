@@ -4,9 +4,7 @@ import binascii
 import socket
 import unittest
 
-from tornado_smb.nbt import (
-    NB_NAME_PURPOSE_WORKSTATION, NB_NS_NB_FLAGS_ONT_B,
-)
+from tornado_smb.nbt import NB_NAME_PURPOSE_WORKSTATION
 from tornado_smb.nbt import (
     NBName, NBNSNameQueryRequest, NBNSNameRegistrationRequest,
 )
@@ -113,7 +111,6 @@ class NBNSNameRegistrationRequestTestCase(unittest.TestCase):
         testee = NBNSNameRegistrationRequest(
             name_trn_id=1964,
             q_name=NBName("neko").to_bytes(),
-            ont=NB_NS_NB_FLAGS_ONT_B,
             nb_address=socket.inet_aton("10.129.203.95"),
             broadcast=True,
         )
