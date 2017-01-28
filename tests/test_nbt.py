@@ -7,6 +7,7 @@ import unittest
 from tornado_smb.nbt import NB_NAME_PURPOSE_WORKSTATION
 from tornado_smb.nbt import (
     NBName, NBNSNameQueryRequest, NBNSNameRegistrationRequest,
+    NBNSNameOverwriteDemand,
 )
 
 
@@ -119,6 +120,26 @@ class NBNSNameRegistrationRequestTestCase(unittest.TestCase):
             binascii.hexlify(data).decode(),
             (
                 "07ac2910000100000000000120454f4546454c4550434143414341434143"
+                "4143414341434143414341434141410000200001c00c0020000100000000"
+                "000600000a81cb5f"
+            )
+        )
+
+
+class NBNSNameOverwriteDemandTestCase(unittest.TestCase):
+
+    def test_to_bytes(self):
+        testee = NBNSNameOverwriteDemand(
+            name_trn_id=1964,
+            q_name=NBName("neko").to_bytes(),
+            nb_address=socket.inet_aton("10.129.203.95"),
+            broadcast=True,
+        )
+        data = testee.to_bytes()
+        self.assertEqual(
+            binascii.hexlify(data).decode(),
+            (
+                "07ac2810000100000000000120454f4546454c4550434143414341434143"
                 "4143414341434143414341434141410000200001c00c0020000100000000"
                 "000600000a81cb5f"
             )

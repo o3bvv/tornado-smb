@@ -362,6 +362,9 @@ class NBNSNameQueryRequest(NBNSRequest):
                 ),
             ],
         )
+        self.name_trn_id = name_trn_id
+        self.q_name = q_name
+        self.broadcast = broadcast
 
 
 class NBNSNameRegistrationResourceRecord(NBNSResourceRecord):
@@ -414,10 +417,58 @@ class NBNSNameRegistrationRequest(NBNSRequest):
         elif ont is None:
             raise ValueError("NBNSNameRegistrationRequest requires ONT value.")
 
-
         nm_flags = (
                NB_NS_NM_FLAGS_RD
             | (NB_NS_NM_FLAGS_BCAST if broadcast else NB_NS_NM_FLAGS_UCAST)
+        )
+        g = NB_NS_NB_FLAGS_GROUP if for_group else NB_NS_NB_FLAGS_UNIQUE
+
+        super().__init__(
+            name_trn_id = name_trn_id,
+            opcode      = NB_NS_OPCODE_REGISTER,
+            nm_flags    = nm_flags,
+            questions   = [
+                NBNSQuestionEntry(
+                    q_name  = q_name,
+                    q_type  = NBNS_Q_TYPE_NB,
+                    q_class = NBNS_Q_CLASS_IN,
+                ),
+            ],
+            additional_rrs = [
+                NBNSNameRegistrationResourceRecord(
+                    ttl        = ttl,
+                    g          = g,
+                    ont        = ont,
+                    nb_address = nb_address,
+                ),
+            ],
+        )
+
+
+class NBNSNameOverwriteDemand(NBNSRequest):
+    """
+    NetBIOS Name Service Name Overwrite Request & Demand.
+
+    See also: section 4.2.3 of RFC 1002 (https://tools.ietf.org/html/rfc1002).
+
+    """
+
+    def __init__(
+        self, name_trn_id, q_name, nb_address, for_group=False, ont=None,
+        ttl=None, broadcast=False,
+    ):
+        if broadcast:
+            ttl = 0
+        elif ttl is None:
+            raise ValueError("NBNSNameRegistrationRequest requires TTL value.")
+
+        if broadcast:
+            ont = NB_NS_NB_FLAGS_ONT_B
+        elif ont is None:
+            raise ValueError("NBNSNameRegistrationRequest requires ONT value.")
+
+        nm_flags = (
+            (NB_NS_NM_FLAGS_BCAST if broadcast else NB_NS_NM_FLAGS_UCAST)
         )
         g = NB_NS_NB_FLAGS_GROUP if for_group else NB_NS_NB_FLAGS_UNIQUE
 
