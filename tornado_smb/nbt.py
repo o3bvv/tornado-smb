@@ -495,3 +495,72 @@ class NBNSNameOverwriteDemand(NBNSRequest):
                 ),
             ],
         )
+
+
+class NBNSResponse(NBNSMessage):
+
+    def __init__(
+        self,
+        name_trn_id, opcode, nm_flags, rcode, questions=None, answer_rrs=None,
+        authority_rrs=None, additional_rrs=None,
+    ):
+        super().__init__(
+            name_trn_id = name_trn_id,
+            r = NB_NS_R_RESPONSE,
+            opcode = opcode,
+            nm_flags = nm_flags,
+            rcode = rcode,
+            questions = questions,
+            answer_rrs = answer_rrs,
+            authority_rrs = authority_rrs,
+            additional_rrs = additional_rrs,
+        )
+
+
+class NBNSNegativeNameRegistrationResponse(NBNSResponse):
+    """
+    NetBIOS Name Service Negative Name Registration Response.
+
+    See also: section 4.2.6 of RFC 1002 (https://tools.ietf.org/html/rfc1002).
+
+    """
+
+    def __init__(
+        self, name_trn_id, q_name, nb_address, ont, for_group=False,
+        rcode=NB_NS_RCODE_ACT_ERR,
+    ):
+        nm_flags = (
+              NB_NS_NM_FLAGS_AA
+            | NB_NS_NM_FLAGS_RD
+            | NB_NS_NM_FLAGS_RA
+        )
+        super().__init__(
+            name_trn_id = name_trn_id,
+            opcode = NB_NS_OPCODE_REGISTER,
+            nm_flags = nm_flags,
+            rcode = rcode,
+            answer_rrs = [
+                self.build_answer_record(q_name, nb_address, for_group, ont),
+            ],
+        )
+
+    @staticmethod
+    def build_answer_record(q_name, nb_address, ont, for_group):
+        g = NB_NS_NB_FLAGS_GROUP if for_group else NB_NS_NB_FLAGS_UNIQUE
+        data = (
+             pack(
+                '>H',
+                (
+                       g   << 15
+                    | (ont << 12)
+                )
+            )
+            + nb_address
+        )
+        return NBNSResourceRecord(
+            rr_name = q_name,
+            rr_type = NBNS_RR_TYPE_NB,
+            rr_class = NBNS_RR_CLASS_IN,
+            ttl = 0,
+            rdata = data,
+        )

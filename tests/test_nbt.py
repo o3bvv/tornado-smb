@@ -4,10 +4,10 @@ import binascii
 import socket
 import unittest
 
-from tornado_smb.nbt import NB_NAME_PURPOSE_WORKSTATION
+from tornado_smb.nbt import NB_NAME_PURPOSE_WORKSTATION, NB_NS_NB_FLAGS_ONT_B
 from tornado_smb.nbt import (
     NBName, NBNSNameQueryRequest, NBNSNameRegistrationRequest,
-    NBNSNameOverwriteDemand,
+    NBNSNameOverwriteDemand, NBNSNegativeNameRegistrationResponse,
 )
 
 
@@ -100,8 +100,9 @@ class NBNSNameQueryRequestTestCase(unittest.TestCase):
         self.assertEqual(
             binascii.hexlify(data).decode(),
             (
-                "07ac0110000100000000000020454f4546454c4550434143414341434143"
-                "41434143414341434143414341414103434154034f52470000200001"
+                "07ac" "0110" "0001" "0000" "0000" "0000" "20454f4546454c4550"
+                "434143414341434143414341434143414341434143414141034341"
+                "54034f524700" "0020" "0001"
             )
         )
 
@@ -119,9 +120,9 @@ class NBNSNameRegistrationRequestTestCase(unittest.TestCase):
         self.assertEqual(
             binascii.hexlify(data).decode(),
             (
-                "07ac2910000100000000000120454f4546454c4550434143414341434143"
-                "4143414341434143414341434141410000200001c00c0020000100000000"
-                "000600000a81cb5f"
+                "07ac" "2910" "0001" "0000" "0000" "0001" "20454f4546454c4550"
+                "43414341434143414341434143414341434143414341414100" "0020"
+                "0001" "c00c" "0020" "0001" "00000000" "0006" "0000" "0a81cb5f"
             )
         )
 
@@ -139,8 +140,27 @@ class NBNSNameOverwriteDemandTestCase(unittest.TestCase):
         self.assertEqual(
             binascii.hexlify(data).decode(),
             (
-                "07ac2810000100000000000120454f4546454c4550434143414341434143"
-                "4143414341434143414341434141410000200001c00c0020000100000000"
-                "000600000a81cb5f"
+                "07ac" "2810" "0001" "0000" "0000" "0001" "20454f4546454c4550"
+                "43414341434143414341434143414341434143414341414100" "0020"
+                "0001" "c00c" "0020" "0001" "00000000" "0006" "0000" "0a81cb5f"
+            )
+        )
+
+class NBNSNegativeNameRegistrationResponseTestCase(unittest.TestCase):
+
+    def test_to_bytes(self):
+        testee = NBNSNegativeNameRegistrationResponse(
+            name_trn_id=1964,
+            q_name=NBName("neko").to_bytes(),
+            nb_address=socket.inet_aton("10.129.203.95"),
+            ont=NB_NS_NB_FLAGS_ONT_B,
+        )
+        data = testee.to_bytes()
+        self.assertEqual(
+            binascii.hexlify(data).decode(),
+            (
+                "07ac" "ad86" "0000" "0001" "0000" "0000" "20454f4546454c4550"
+                "43414341434143414341434143414341434143414341414100" "0020"
+                "0001" "00000000" "0006" "0000" "0a81cb5f"
             )
         )
