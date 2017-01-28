@@ -39,8 +39,8 @@ class NBName:
                 .format(value=value, max=NB_NAME_VALUE_LEN)
             )
 
-        self.value   = value.upper()
-        self.scope   = scope.upper() if scope else ''
+        self.value = value.upper()
+        self.scope = scope.upper() if scope else ''
         self.purpose = bytes([purpose, ])
 
     def to_bytes(self):
@@ -85,8 +85,8 @@ class NBName:
                 .format(expected=ZERO, actual=last_byte)
             )
 
-        offset  = 0
-        length  = data[offset]
+        offset = 0
+        length = data[offset]
         offset += 1
 
         if length != NB_NAME_FULL_LEN_BYTES:
@@ -96,9 +96,9 @@ class NBName:
                 .format(expected=NB_NAME_FULL_LEN_BYTES, actual=length)
             )
 
-        full_name       = cls.decode_bytes(data[offset:offset + length])
-        value, purpose  = cls.decode_value_and_purpose(full_name)
-        offset         += length
+        full_name = cls.decode_bytes(data[offset:offset + length])
+        value, purpose = cls.decode_value_and_purpose(full_name)
+        offset += length
 
         scope = cls.decode_scope(data[offset:-1])
         return cls(value=value, scope=scope, purpose=purpose)
@@ -124,7 +124,7 @@ class NBName:
 
         while offset < len(data):
 
-            length  = data[offset]
+            length = data[offset]
             offset += 1
 
             chunk = data[offset:offset + length].decode()
@@ -209,8 +209,8 @@ class NBNSQuestionEntry:
     __slots__ = ('q_name', 'q_type', 'q_class', )
 
     def __init__(self, q_name, q_type, q_class):
-        self.q_name  = q_name
-        self.q_type  = q_type
+        self.q_name = q_name
+        self.q_type = q_type
         self.q_class = q_class
 
     def to_bytes(self):
@@ -230,11 +230,11 @@ class NBNSResourceRecord:
     )
 
     def __init__(self, rr_name, rr_type, rr_class, ttl, rdata):
-        self.rr_name  = rr_name
-        self.rr_type  = rr_type
+        self.rr_name = rr_name
+        self.rr_type = rr_type
         self.rr_class = rr_class
-        self.ttl      = ttl
-        self.rdata    = rdata
+        self.ttl = ttl
+        self.rdata = rdata
 
     def to_bytes(self):
         rdlength = len(self.rdata)
@@ -265,14 +265,14 @@ class NBNSMessage:
         self, name_trn_id, r, opcode, nm_flags, rcode, questions=None,
         answer_rrs=None, authority_rrs=None, additional_rrs=None,
     ):
-        self.name_trn_id    = name_trn_id
-        self.r              = r
-        self.opcode         = opcode
-        self.nm_flags       = nm_flags
-        self.rcode          = rcode
-        self.questions      = questions
-        self.answer_rrs     = answer_rrs
-        self.authority_rrs  = authority_rrs
+        self.name_trn_id = name_trn_id
+        self.r = r
+        self.opcode = opcode
+        self.nm_flags = nm_flags
+        self.rcode = rcode
+        self.questions = questions
+        self.answer_rrs = answer_rrs
+        self.authority_rrs = authority_rrs
         self.additional_rrs = additional_rrs
 
     def to_bytes(self):
@@ -325,14 +325,14 @@ class NBNSRequest(NBNSMessage):
         authority_rrs=None, additional_rrs=None,
     ):
         super().__init__(
-            name_trn_id    = name_trn_id,
-            r              = NB_NS_R_REQUEST,
-            opcode         = opcode,
-            nm_flags       = nm_flags,
-            rcode          = NB_NS_RCODE_POS_RSP,
-            questions      = questions,
-            answer_rrs     = answer_rrs,
-            authority_rrs  = authority_rrs,
+            name_trn_id = name_trn_id,
+            r = NB_NS_R_REQUEST,
+            opcode = opcode,
+            nm_flags = nm_flags,
+            rcode = NB_NS_RCODE_POS_RSP,
+            questions = questions,
+            answer_rrs = answer_rrs,
+            authority_rrs = authority_rrs,
             additional_rrs = additional_rrs,
         )
 
@@ -352,12 +352,12 @@ class NBNSNameQueryRequest(NBNSRequest):
         )
         super().__init__(
             name_trn_id = name_trn_id,
-            opcode      = NB_NS_OPCODE_QUERY,
-            nm_flags    = nm_flags,
-            questions   = [
+            opcode = NB_NS_OPCODE_QUERY,
+            nm_flags = nm_flags,
+            questions = [
                 NBNSQuestionEntry(
-                    q_name  = q_name,
-                    q_type  = NBNS_Q_TYPE_NB,
+                    q_name = q_name,
+                    q_type = NBNS_Q_TYPE_NB,
                     q_class = NBNS_Q_CLASS_IN,
                 ),
             ],
@@ -384,14 +384,14 @@ class NBNSNameRegistrationResourceRecord(NBNSResourceRecord):
             + nb_address
         )
         super().__init__(
-            rr_name  = NBNS_LABEL_STRING_POINTER,
-            rr_type  = NBNS_RR_TYPE_NB,
+            rr_name = NBNS_LABEL_STRING_POINTER,
+            rr_type = NBNS_RR_TYPE_NB,
             rr_class = NBNS_RR_CLASS_IN,
-            ttl      = ttl,
-            rdata    = data,
+            ttl = ttl,
+            rdata = data,
         )
-        self.g          = g
-        self.ont        = ont
+        self.g = g
+        self.ont = ont
         self.nb_address = nb_address
 
 
@@ -425,20 +425,20 @@ class NBNSNameRegistrationRequest(NBNSRequest):
 
         super().__init__(
             name_trn_id = name_trn_id,
-            opcode      = NB_NS_OPCODE_REGISTER,
-            nm_flags    = nm_flags,
-            questions   = [
+            opcode = NB_NS_OPCODE_REGISTER,
+            nm_flags = nm_flags,
+            questions = [
                 NBNSQuestionEntry(
-                    q_name  = q_name,
-                    q_type  = NBNS_Q_TYPE_NB,
+                    q_name = q_name,
+                    q_type = NBNS_Q_TYPE_NB,
                     q_class = NBNS_Q_CLASS_IN,
                 ),
             ],
             additional_rrs = [
                 NBNSNameRegistrationResourceRecord(
-                    ttl        = ttl,
-                    g          = g,
-                    ont        = ont,
+                    ttl = ttl,
+                    g = g,
+                    ont = ont,
                     nb_address = nb_address,
                 ),
             ],
@@ -474,20 +474,20 @@ class NBNSNameOverwriteDemand(NBNSRequest):
 
         super().__init__(
             name_trn_id = name_trn_id,
-            opcode      = NB_NS_OPCODE_REGISTER,
-            nm_flags    = nm_flags,
-            questions   = [
+            opcode = NB_NS_OPCODE_REGISTER,
+            nm_flags = nm_flags,
+            questions = [
                 NBNSQuestionEntry(
-                    q_name  = q_name,
-                    q_type  = NBNS_Q_TYPE_NB,
+                    q_name = q_name,
+                    q_type = NBNS_Q_TYPE_NB,
                     q_class = NBNS_Q_CLASS_IN,
                 ),
             ],
             additional_rrs = [
                 NBNSNameRegistrationResourceRecord(
-                    ttl        = ttl,
-                    g          = g,
-                    ont        = ont,
+                    ttl = ttl,
+                    g = g,
+                    ont = ont,
                     nb_address = nb_address,
                 ),
             ],
