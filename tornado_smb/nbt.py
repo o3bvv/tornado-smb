@@ -451,6 +451,9 @@ class NBNSNameOverwriteDemand(NBNSRequest):
 
     See also: section 4.2.3 of RFC 1002 (https://tools.ietf.org/html/rfc1002).
 
+    Totally same, as NBNSNameRegistrationRequest, but Recursion Desired flag
+    is cleared.
+
     """
 
     def __init__(
@@ -460,12 +463,12 @@ class NBNSNameOverwriteDemand(NBNSRequest):
         if broadcast:
             ttl = 0
         elif ttl is None:
-            raise ValueError("NBNSNameRegistrationRequest requires TTL value.")
+            raise ValueError("NBNSNameOverwriteDemand requires TTL value.")
 
         if broadcast:
             ont = NB_NS_NB_FLAGS_ONT_B
         elif ont is None:
-            raise ValueError("NBNSNameRegistrationRequest requires ONT value.")
+            raise ValueError("NBNSNameOverwriteDemand requires ONT value.")
 
         nm_flags = (
             (NB_NS_NM_FLAGS_BCAST if broadcast else NB_NS_NM_FLAGS_UCAST)
