@@ -7,11 +7,25 @@ from tornado.ioloop import IOLoop
 from tornado.iostream import IOStream
 
 
+class UDPStream(IOStream):
+    _destination = None
+
+    def __init__(self, destination, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._destination = destination
+
+    def write_to_fd(self, data):
+        # A dirty hack. Do not use 'socket.connect()' & 'socket.send()',
+        # as dectination can be a broadcast and a socket 'connected' to
+        # broadcast will not be able to receive data.
+        return self.socket.sendto(data, self._destination)
+
 class UDPClient:
     """
     A non-blocking UDP connection factory.
 
     """
+    io_loop = None
 
     def __init__(self, io_loop=None):
         self.io_loop = io_loop or IOLoop.current()
@@ -19,24 +33,23 @@ class UDPClient:
     @gen.coroutine
     def connect(
         self, host, port, ssl_options=None, max_buffer_size=None,
-        broadcast=False,
+        broadcast=False, reuse=True,
     ):
-        """
-        Connect to the given host and port.
-
-        Asynchronously returns an `.IOStream`
-        (or `.SSLIOStream` if ``ssl_options`` is not None).
-
-        """
         sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        # TODO: make configurable
+        sock.bind(('', 0))
 
         if broadcast:
             sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
 
-        stream = IOStream(
+        if reuse:
+            sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+
+        stream = UDPStream(
             socket=sock,
             io_loop=self.io_loop,
             max_buffer_size=max_buffer_size,
+            destination=(host, port),
         )
 
         if ssl_options is not None:
@@ -46,5 +59,4 @@ class UDPClient:
                 server_hostname=host,
             )
 
-        stream.connect(address=(host, port), )
         return stream
