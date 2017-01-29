@@ -2,11 +2,13 @@
 # coding: utf-8
 
 import argparse
+import random
 
 from tornado import gen
 from tornado.ioloop import IOLoop
 
-from tornado_smb.nbt import NBName, NBNSNameQueryRequest
+from tornado_smb.nbt import NBName
+from tornado_smb.nbt import NBNSNameQueryRequest
 from tornado_smb.udp import UDPClient
 
 
@@ -18,9 +20,10 @@ NB_NS_PORT = 137
 def run_query(ioloop, name, scope):
     c = UDPClient(ioloop)
     stream = yield c.connect(BROADCAST_ADDR, NB_NS_PORT, broadcast=True)
+    trn_id = random.randint(0, 0xFFFF)
     nb_name = NBName(name, scope)
     nb_name_query = NBNSNameQueryRequest(
-        name_trn_id=1964,
+        name_trn_id=trn_id,
         q_name=nb_name.to_bytes(),
         broadcast=True,
     )
